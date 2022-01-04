@@ -1,0 +1,35 @@
+version: "3.3"
+services:
+
+  web:
+    restart: always
+    build: 
+      context: .
+      dockerfile: ./src/Dockerfile
+    container_name: ecommerce-api-web
+    image: ecommerce-api-django
+    volumes:
+      - ./src/:/ecommerce/
+      - ecommerce-api-static:/ecommerce/static
+      - ecommerce-api-media:/ecommerce/media
+    command: bash -c "python manage.py collectstatic --no-input && python manage.py migrate && gunicorn --workers=3 ecommerce.wsgi -b 0.0.0.0:8000"
+
+  nginx:
+    restart: always
+    container_name: ecommerce-api-nginx
+    image: ecommerce-api-nginx
+    build: ./nginx/
+    volumes:
+      - ./nginx/:/etc/nginx/conf.d
+      - ./logs/:/ecommerce/logs
+      - ecommerce-api-static:/ecommerce/static
+      - ecommerce-api-media:/ecommerce/media
+    ports:
+      - "3100:80"
+    links:
+      - web
+
+
+volumes:
+  ecommerce-api-static:
+  ecommerce-api-media:
